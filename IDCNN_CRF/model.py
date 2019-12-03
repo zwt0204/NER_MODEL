@@ -10,7 +10,7 @@ import numpy as np
 from tensorflow.contrib.crf import crf_log_likelihood
 from tensorflow.contrib.crf import viterbi_decode
 from tensorflow.contrib.layers.python.layers import initializers
-from ner_model.IDCNN_CRF.utils import *
+from IDCNN_CRF.utils import *
 
 
 class IDCNN_MODEL:
@@ -49,7 +49,7 @@ class IDCNN_MODEL:
         # 批次大小
         self.batch_size = tf.shape(self.char_inputs)[0]
         # 句子最大长度
-        self.num_steps = tf.shape(self.char_inputs)[-1]
+        self.sequence_length = tf.shape(self.char_inputs)[-1]
 
         # parameters for idcnn
         # 每次有3次卷积操作，前两次卷积膨胀系数为1，后一次膨胀系数为2
@@ -179,17 +179,26 @@ class IDCNN_MODEL:
                                     dtype=tf.float32, initializer=self.initializer)
                 b = tf.get_variable("b", initializer=tf.constant(0.001, shape=[self.num_tags]))
                 pred = tf.nn.xw_plus_b(self.finalOut, W, b)
-            self.logits = tf.reshape(pred, [-1, self.num_steps, self.num_tags])
+                # [batch_size, sequence_length, num_tags]
+            self.logits = tf.reshape(pred, [-1, self.sequence_length, self.num_tags])
 
     def create_loss(self):
         with tf.variable_scope("crf_loss"):
             small = -1000.0
-            # #num_steps是句子长度；pad_logits是特征提取并全连接后的输出
+            # sequence_length是句子长度；pad_logits是特征提取并全连接后的输出
+            # [batch_size,1,num_tags+1]
+            """
+            start_logits作用：增加了句子开头的标志和结束的标志，并把score赋值为很小的值
+            这样就多了开头标签到第一个字标签的转移score
+            """
             start_logits = tf.concat(
                 [small * tf.ones(shape=[self.batch_size, 1, self.num_tags]), tf.zeros(shape=[self.batch_size, 1, 1])],
                 axis=-1)
-            pad_logits = tf.cast(small * tf.ones([self.batch_size, self.num_steps, 1]), tf.float32)
+            # [batch_size, sequence_length, 1]
+            pad_logits = tf.cast(small * tf.ones([self.batch_size, self.sequence_length, 1]), tf.float32)
+            # [batch_size,sequence_length,num_tags+1]
             logits = tf.concat([self.logits, pad_logits], axis=-1)
+            # [batch_size,sequence_length+1,num_tags+1]
             logits = tf.concat([start_logits, logits], axis=1)
             # tf.cast类型转换
             targets = tf.concat(
@@ -216,6 +225,8 @@ class IDCNN_MODEL:
             self.loss = tf.reduce_mean(-log_likelihood)
             self.opt = tf.train.AdagradOptimizer(self.lr)
             grads_vars = self.opt.compute_gradients(self.loss)
+            # tf.clip_by_value(A, min, max)：输入一个张量A，把A中的每一个元素的值都压缩在min和max之间。
+            # 小于min的让它等于min，大于max的元素的值等于max。
             capped_grads_vars = [[tf.clip_by_value(g, -self.clip, self.clip), v]
                                  for g, v in grads_vars]
             self.train_op = self.opt.apply_gradients(capped_grads_vars, self.global_step)
@@ -256,7 +267,7 @@ class IDCNN_MODEL:
 
     def decode(self, logits, lengths, matrix):
         """
-        :param logits: [batch_size, num_steps, num_tags]float32, logits
+        :param logits: [batch_size, sequence_length, num_tags]float32, logits
         :param lengths: [batch_size]int32, real length of each sequence
         :param matrix: transaction matrix for inference
         :return:
