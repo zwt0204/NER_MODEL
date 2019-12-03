@@ -10,7 +10,7 @@ import os
 import numpy as np
 import json
 import tensorflow as tf
-from ner_model.bilstm_cnn_crf.model import NerCore
+from bilstm_cnn_crf.model import NerCore
 
 
 class NerTrainner:

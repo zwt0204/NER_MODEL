@@ -7,11 +7,11 @@
 @Software: PyCharm
 """
 import itertools
-from ner_model.IDCNN_CRF.model import IDCNN_MODEL
+from IDCNN_CRF.model import IDCNN_MODEL
 import pickle
-from ner_model.IDCNN_CRF.loader import *
-from ner_model.IDCNN_CRF.data_utils import *
-from ner_model.IDCNN_CRF.utils import *
+from IDCNN_CRF.loader import *
+from IDCNN_CRF.data_utils import *
+from IDCNN_CRF.utils import *
 logger = get_logger(os.path.join('log', 'train.log'))
 
 
