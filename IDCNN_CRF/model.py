@@ -55,7 +55,9 @@ class IDCNN_MODEL:
         # 每次有3次卷积操作，前两次卷积膨胀系数为1，后一次膨胀系数为2
         # 膨胀卷积 膨胀卷积核尺寸 = 膨胀系数 *（原始卷积核尺寸-1）+1
         self.layers = [{'dilation': 1}, {'dilation': 1}, {'dilation': 2}]
+        # 卷积核个数
         self.num_filter = 100
+        # 卷积核宽度
         self.filter_width = 3
         self.keep_out = 0.5
         # 总的嵌入维度
