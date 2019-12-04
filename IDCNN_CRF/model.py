@@ -55,7 +55,6 @@ class IDCNN_MODEL:
         # 每次有3次卷积操作，前两次卷积膨胀系数为1，后一次膨胀系数为2
         # 膨胀卷积 膨胀卷积核尺寸 = 膨胀系数 *（原始卷积核尺寸-1）+1
         self.layers = [{'dilation': 1}, {'dilation': 1}, {'dilation': 2}]
-        #
         self.num_filter = 100
         self.filter_width = 3
         self.keep_out = 0.5
@@ -65,9 +64,11 @@ class IDCNN_MODEL:
         self.repeat_times = 4
         # 梯度裁剪
         self.clip = 5
+        self.totalWidthForLastDim = self.repeat_times * self.num_filter
         # self.cnn_output_width = 0
         self.initializer = initializers.xavier_initializer()
         self.create_declare()
+        self.create_embeddnig()
         self.create_model()
         self.create_loss()
         # saver of the model
@@ -75,6 +76,16 @@ class IDCNN_MODEL:
         self.saver = tf.train.Saver(variables, max_to_keep=5)
 
     def create_declare(self):
+        with tf.name_scope("ner_declare"):
+            self.filterW = tf.get_variable("filterW", shape=[1, self.filter_width, self.num_filter, self.num_filter],
+                                initializer=tf.contrib.layers.xavier_initializer())
+            self.filterB = tf.get_variable("filterB", shape=[self.num_filter])
+
+            self.MLP_W = tf.get_variable("W", shape=[self.totalWidthForLastDim, self.num_tags],
+                                dtype=tf.float32, initializer=self.initializer)
+            self.MLP_b = tf.get_variable("b", initializer=tf.constant(0.001, shape=[self.num_tags]))
+
+    def create_embeddnig(self):
         """
          高：3 血：22 糖：23 和：24 高：3 血：22 压：25 char_inputs=[3,22,23,24,3,22,25]
          seg_num:个人理解为类似于上下文的意思：
@@ -99,6 +110,8 @@ class IDCNN_MODEL:
             self.embed = tf.concat(embedding, axis=-1)
             # [None, sequence_length, embedding_size]
             self.model_inputs = tf.nn.dropout(self.embed, self.dropout)
+            # [batch_size, 1, sequence_lenght, embedding_size]
+            self.model_inputs = tf.expand_dims(self.model_inputs, 1)
 
     def create_model(self):
         # tf.expand_dims增加一个维度
@@ -107,8 +120,6 @@ class IDCNN_MODEL:
         就差一个in_channels
         针对当前的计算，嵌入维度作为通道，差了in_height，所以在第二个维度增加1
         """
-        # [batch_size, 1, sequence_lenght, embedding_size]
-        model_inputs = tf.expand_dims(self.model_inputs, 1)
         # reuse=False时，函数get_variable（）表示创建变量
         # reuse=True时，函数get_variable（）表示获取变量
         reuse = False
@@ -130,7 +141,7 @@ class IDCNN_MODEL:
             # padding： string类型，值为“SAME” 和 “VALID”，表示的是卷积的形式，是否考虑边界。"SAME"是考虑边界，
             # 不足的时候用0去填充周围，"VALID"则不考虑
             # 返回feature map：[batch, height, width, channels]
-            layerInput = tf.nn.conv2d(model_inputs,
+            layerInput = tf.nn.conv2d(self.model_inputs,
                                       filter_weights,
                                       strides=[1, 1, 1, 1],
                                       padding="SAME",
@@ -145,9 +156,6 @@ class IDCNN_MODEL:
                     with tf.variable_scope("atrous-conv-layer-%d" % i,
                                            reuse=True
                                            if (reuse or j > 0) else False):
-                        w = tf.get_variable("filterW", shape=[1, self.filter_width, self.num_filter, self.num_filter],
-                                            initializer=tf.contrib.layers.xavier_initializer())
-                        b = tf.get_variable("filterB", shape=[self.num_filter])
                         # 输入要做卷积的矩阵：[batch, height, width, channels]
                         # w:[batch, height, width, out_channels]
                         # rate=1时表示普通的卷积
@@ -156,8 +164,8 @@ class IDCNN_MODEL:
                         填充方式为“SAME”时，返回[batch, height, width, out_channels]的Tensor
                         """
                         # 空洞卷积的时候padding一定要注意，因为卷积核可能比输入还要打，所以尽量使用padding=‘SAME’
-                        conv = tf.nn.atrous_conv2d(layerInput, w, rate=dilation, padding="SAME")
-                        conv = tf.nn.bias_add(conv, b)
+                        conv = tf.nn.atrous_conv2d(layerInput, self.filterW, rate=dilation, padding="SAME")
+                        conv = tf.nn.bias_add(conv, self.filterB)
                         conv = tf.nn.relu(conv)
                         if isLast:
                             finalOutFromLayers.append(conv)
@@ -171,15 +179,10 @@ class IDCNN_MODEL:
             # 删除掉height
             finalOut = tf.squeeze(finalOut, [1])
             self.finalOut = tf.reshape(finalOut, [-1, totalWidthForLastDim])
-            self.totalWidthForLastDim = totalWidthForLastDim
         with tf.variable_scope("project"):
             # project to score of tags
             with tf.variable_scope("logits"):
-                W = tf.get_variable("W", shape=[self.totalWidthForLastDim, self.num_tags],
-                                    dtype=tf.float32, initializer=self.initializer)
-                b = tf.get_variable("b", initializer=tf.constant(0.001, shape=[self.num_tags]))
-                pred = tf.nn.xw_plus_b(self.finalOut, W, b)
-                # [batch_size, sequence_length, num_tags]
+                pred = tf.nn.xw_plus_b(self.finalOut, self.MLP_W, self.MLP_b)
             self.logits = tf.reshape(pred, [-1, self.sequence_length, self.num_tags])
 
     def create_loss(self):
