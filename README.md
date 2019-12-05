@@ -1,5 +1,5 @@
 # 命名实体识别
-主要涉及方法：CRF、BILSTM+CRF、IDCNN+CRF、BILSTM+CNN+CRF、Lattice-LSTM、Transformer+CRF
+主要涉及方法：CRF、BILSTM+CRF、IDCNN+CRF、BILSTM+CNN+CRF、Lattice-LSTM、Transformer+CRF、ALBERT+BILSTM+CRF
 ## CRF
 - 参考：https://github.com/phychaos/transformer_crf
 - data: https://github.com/phychaos/transformer_crf/tree/master/data
@@ -16,4 +16,6 @@
 ## Transformer+CRF
 - 参考：https://github.com/phychaos/transformer_crf
 - data：https://github.com/phychaos/transformer_crf/tree/master/data
+## ALBERT+BILSTM+CRF
+- 数据格式：{'text':'肯德基在哪里', 'label':'B-PRO I-PRO O O'}
 
