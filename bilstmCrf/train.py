@@ -14,7 +14,7 @@ from bilstmCrf.model import NerCore
 
 
 class NerTrainner:
-    def __init__(self, vocab_file="D:\mygit\\tf1.0\data\dictionary.json"):
+    def __init__(self, vocab_file="vocab.json"):
         self.model_dir = "ner"
         self.vocab_file = vocab_file
         self.char_index = {' ': 0}

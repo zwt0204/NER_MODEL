@@ -10,6 +10,7 @@ import numpy as np
 import os
 import pickle
 import json
+import re
 
 
 def random_param(f_size):
@@ -248,3 +249,52 @@ def reverse_style(input_string):
     input_len = len(input_string)
     output_string = input_string[target_position:input_len] + input_string[0:target_position]
     return output_string
+
+
+def read_template(filename):
+    """
+    读取模板特征
+    :param filename: 模板文件  U08:%x[-1,0]/%x[0,0]
+    :return: tp_list [[U00,[0,0],[1,0]]]
+    """
+    if not os.path.isfile(filename):
+        print("模板文件[{}]不存在!".format(filename))
+        exit()
+    tp_list = []
+    pattern = re.compile(r'\[-?\d+,-?\d+\]')  # -?[0-9]*
+    with open(filename, 'r', encoding='utf-8') as fp:
+        for line in fp.readlines():
+            line = line.strip()
+            if len(line) == 0:
+                continue
+            if line[0] == "#":
+                continue
+            fl = line.find("#")
+            if fl != -1:  # 移除注释
+                line = line[0:fl]
+            if valid_template_line(line) is False:
+                continue
+            fl = line.find(":")
+            if fl != -1:  # just a symbol 模板符号 -> U00:%x[0,0]
+                each_list = [line[0:fl]]
+            else:
+                each_list = [line[0]]
+
+            for a in list(pattern.finditer(line)):
+                loc_str = line[a.start() + 1:a.end() - 1]
+                loc = loc_str.split(",")
+                each_list.append(loc)
+            tp_list.append(each_list)
+    print("有效模板数量:", len(tp_list))
+    return tp_list
+
+
+def valid_template_line(line):
+    if_valid = True
+    if line.count("[") != line.count("]"):
+        if_valid = False
+    if "UuBb".find(line[0]) == -1:
+        if_valid = False
+    if if_valid is False:
+        print("模板错误:", line)
+    return if_valid

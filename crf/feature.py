@@ -3,7 +3,7 @@
 # @时间   : 18-12-11 下午5:44
 # @作者   : Lin lifang
 # @文件   : feature.py
-from utils.utils import read_template
+from crf.utils import read_template
 import numpy as np
 
 
@@ -191,3 +191,5 @@ class Feature(object):
 		self.cal_observe_on(texts)
 		self.cal_fss(labels, y0)
 		self.save_feature()
+
+

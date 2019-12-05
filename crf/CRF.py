@@ -10,9 +10,9 @@ from concurrent import futures
 from scipy.misc import logsumexp
 from scipy import optimize
 import time
-from ner_model.crf.feature import Feature
+from crf.feature import Feature
 _gradient = None
-from ner_model.crf.utils import *
+from crf.utils import *
 
 
 def logsumexp_vec_mat(log_a, log_m):

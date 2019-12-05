@@ -6,8 +6,8 @@
 @git   : 
 @Software: PyCharm
 """
-from ner_model.crf.CRF import CRF
-from ner_model.crf.utils import *
+from crf.CRF import CRF
+from crf.utils import *
 
 
 def train_crf():
