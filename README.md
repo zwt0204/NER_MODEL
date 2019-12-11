@@ -27,5 +27,5 @@
 - 数据格式：{'text':'肯德基在哪里', 'label':'B-PRO I-PRO O O'}
 - 通过ALBERT引入预训练信息来丰富语义信息
 # 近期论文
-- Hierarchically-Refined Label Attention Network for Sequence Labeling (EMNLP 2019) [paper](https://www.aclweb.org/anthology/D19-1422/)[code](https://github.com/Nealcly/BiLSTM-LAN) - LAN
-- TENER: Adapting Transformer Encoder for Named Entity Recognition (CoRR 2019) [paper](https://arxiv.org/abs/1911.04474)[code](https://github.com/fastnlp/TENER)
+- Hierarchically-Refined Label Attention Network for Sequence Labeling (EMNLP 2019) [paper](https://www.aclweb.org/anthology/D19-1422/)，[code](https://github.com/Nealcly/BiLSTM-LAN) - LAN
+- TENER: Adapting Transformer Encoder for Named Entity Recognition (CoRR 2019) [paper](https://arxiv.org/abs/1911.04474)，[code](https://github.com/fastnlp/TENER)
