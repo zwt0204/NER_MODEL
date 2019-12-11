@@ -16,8 +16,8 @@ import os
 class Train_model():
 
     def __init__(self):
-        self.vocab_file = 'D:\zwt\work_test\qa_robot_test\\resource\\vocab\dictionary.json'
-        self.model_dir = 'D:\mygit\\tf1.0\models\Transformer'
+        self.vocab_file = 'vocab.json'
+        self.model_dir = 'models\Transformer'
         self.batch_size = 128
         self.lr = 0.0001
         self.sequence_length = 50
@@ -48,9 +48,9 @@ class Train_model():
                 i += 1
 
     def train(self, epochs):
-        x_train, y_train, seq_lens, _, _ = self.generate_data('D:\model\\transformer_crf-master\data\\train.char.bmes', self.char_index, self.classnames[0],
+        x_train, y_train, seq_lens, _, _ = self.generate_data('train.char.bmes', self.char_index, self.classnames[0],
                                                               max_len=self.sequence_length)
-        x_dev, y_dev, dev_seq_lens, _, source_tag = self.generate_data('D:\model\\transformer_crf-master\data\dev.char.bmes', self.char_index, self.classnames[0],
+        x_dev, y_dev, dev_seq_lens, _, source_tag = self.generate_data('dev.char.bmes', self.char_index, self.classnames[0],
                                                                        max_len=self.sequence_length)
         initer = tf.global_variables_initializer()
         with tf.Session() as sess:
