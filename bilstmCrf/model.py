@@ -53,14 +53,16 @@ class NerCore:
             lstm_cell_bw = tf.nn.rnn_cell.DropoutWrapper(tf.nn.rnn_cell.LSTMCell(self.hidden_size),
                                                          output_keep_prob=self.keep_prob)
             with tf.variable_scope("ner_layer", reuse=tf.AUTO_REUSE):
+                # 直接建立多个网络堆叠再输出数据
                 for i in range(self.num_layers):
                     (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(lstm_cell_fw,
                                                                                 lstm_cell_bw,
                                                                                 self.embedded_layer,
                                                                                 sequence_length=self.sequence_lengths,
                                                                                 dtype=tf.float32)
-                    outputs = tf.concat((output_fw, output_bw), 2)
-                self.outputs = tf.concat(outputs, axis=-1)
+                    # [batch_size, sequence_length, hidden_size * 2]
+                    # 取出所有的隐藏层输出，一般对于序列标注就是这样，如果是分类直接取最后一个隐藏状态就可以
+                    self.outputs = tf.concat((output_fw, output_bw), 2)
                 self.outputs = tf.nn.dropout(self.outputs, self.keep_prob)
                 self.outputs = tf.reshape(self.outputs, [-1, 2 * self.hidden_size])
                 self.logits = tf.matmul(self.outputs, self.weight_variable) + self.bias_variable

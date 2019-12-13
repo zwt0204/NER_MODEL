@@ -14,6 +14,7 @@
 ## BILSTM+CNN+CRF
 - 数据格式：{'text':'肯德基在哪里', 'label':'B-PRO I-PRO O O'}
 - 在BILSTM的基础上加入CNN抽取特征，CNN对文本来说相当于抽取n-gram特征
+- [tensorflow中crf](http://note.youdao.com/noteshare?id=abb298997c9f7b41101e0c509da73dc0)
 ## Lattice-LSTM
 - 参考：https://github.com/lyssym/NER-toolkits/tree/master/tf_kit/lattice
 - data：https://github.com/jiesutd/LatticeLSTM
