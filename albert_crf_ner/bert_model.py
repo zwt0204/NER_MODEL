@@ -59,9 +59,7 @@ class Model(object):
         # 打印加载模型的参数
         train_vars = []
         for var in tvars:
-            if var.name in initialized_variable_names:
-                pass
-            else:
+            if var.name not in initialized_variable_names:
                 train_vars.append(var)
         with tf.variable_scope("optimizer"):
             optimizer = self.optimizer
