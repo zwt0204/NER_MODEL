@@ -9,19 +9,17 @@
 import codecs
 import tensorflow as tf
 import numpy as np
-import random
-import math
 import os
 import json
 from bert_lstm_model import Model
 from al_bert import tokenization
 import logging
-from data_process import BatchManager
+from data_process import BatchManager, convert_samples
+
 _logger = logging.getLogger()
-from data_process import convert_samples
 
 
-class modelTrain:
+class ModelTrain:
 
     def __init__(self):
         self.lstm_dim = 128
@@ -92,7 +90,7 @@ class modelTrain:
         checkpoint_path = os.path.join(path, "ner.ckpt")
         model.saver.save(sess, checkpoint_path, global_step=global_steps)
 
-    def prepare_dataset(self, sentences, max_seq_length, lower=False, train=True):
+    def prepare_dataset(self, sentences, max_seq_length, lower=None, train=True):
         """
         Prepare the dataset. Return a list of lists of dictionaries containing:
             - word indexes
@@ -178,5 +176,5 @@ class modelTrain:
 
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    model = modelTrain()
+    model = ModelTrain()
     model.train()

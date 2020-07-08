@@ -22,8 +22,7 @@ class NerTrainner:
         self.unknow_char_id = len(self.char_index)
         self.io_sequence_size = 70
         vocab_size = len(self.char_index) + 1
-        self.classnames = {'O': 0, 'B-BRD': 1, 'I-BRD': 2, 'B-KWD': 3, 'I-KWD': 4, 'B-POP': 5, 'I-POP': 6, 'B-PRO': 7,
-                           'I-PRO': 8, 'B-PRC': 9, 'I-PRC': 10, 'B-FLR': 11, 'I-FLR': 12}
+        self.classnames = {'O': 0, 'B-BRD': 1, 'I-BRD': 2, 'B-KWD': 3, 'I-KWD': 4}
         class_size = len(self.classnames)
         keep_prob = 0.5
         learning_rate = 0.0005
@@ -97,7 +96,7 @@ class NerTrainner:
                 char_vector[i] = self.char_index[char_value]
         return char_vector
 
-    def load_samples(self, dstfile="D:\mygit\\tf1.0\data\\train.json"):
+    def load_samples(self, dstfile="train.json"):
         data_items = []
         with open(dstfile, "r", encoding="utf-8") as reader:
             for line in reader:

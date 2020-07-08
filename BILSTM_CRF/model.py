@@ -7,6 +7,7 @@
 @Software: PyCharm
 """
 import tensorflow as tf
+from tensorflow.python.ops.rnn import bidirectional_dynamic_rnn as bi_rnn
 
 
 class NerCore:
@@ -55,11 +56,11 @@ class NerCore:
             with tf.variable_scope("ner_layer", reuse=tf.AUTO_REUSE):
                 # 直接建立多个网络堆叠再输出数据
                 for i in range(self.num_layers):
-                    (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(lstm_cell_fw,
-                                                                                lstm_cell_bw,
-                                                                                self.embedded_layer,
-                                                                                sequence_length=self.sequence_lengths,
-                                                                                dtype=tf.float32)
+                    (output_fw, output_bw), _ = bi_rnn(lstm_cell_fw,
+                                                       lstm_cell_bw,
+                                                       self.embedded_layer,
+                                                       sequence_length=self.sequence_lengths,
+                                                       dtype=tf.float32)
                     # [batch_size, sequence_length, hidden_size * 2]
                     # 取出所有的隐藏层输出，一般对于序列标注就是这样，如果是分类直接取最后一个隐藏状态就可以
                     self.outputs = tf.concat((output_fw, output_bw), 2)
@@ -73,7 +74,7 @@ class NerCore:
             log_likelihood, self.transition_params = tf.contrib.crf.crf_log_likelihood(inputs=self.logits,
                                                                                        tag_indices=self.targets,
                                                                                        sequence_lengths=self.sequence_lengths)
-            if self.is_training == True:
+            if self.is_training is True:
                 self.cost_func = tf.reduce_mean(-log_likelihood)
                 self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost_func)
 

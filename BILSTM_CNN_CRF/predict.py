@@ -9,11 +9,11 @@
 import numpy as np
 import json
 import tensorflow as tf
-from bilstm_cnn_crf.model import NerCore
+from .model import NerCore
 
 
 class NerPredicter:
-    def __init__(self, vocab_file="D:\mygit\\tf1.0\data\dictionary.json"):
+    def __init__(self, vocab_file="dictionary.json"):
         self.model_dir = "model/ner"
         self.vocab_file = vocab_file
         self.char_index = {' ': 0}
@@ -25,8 +25,7 @@ class NerPredicter:
         learning_rate = 0.001
         trainable = False
         self.batch_size = 64
-        self.classnames = {'O': 0, 'B-BRD': 1, 'I-BRD': 2, 'B-KWD': 3, 'I-KWD': 4, 'B-POP': 5, 'I-POP': 6, 'B-PRC': 7,
-                           'I-PRC': 8, 'B-FLR': 9, 'I-FLR': 10}
+        self.classnames = {'O': 0, 'B-BRD': 1, 'I-BRD': 2, 'B-KWD': 3, 'I-KWD': 4}
         class_size = len(self.classnames)
         self.classids = {}
         for key in self.classnames.keys():
@@ -79,9 +78,7 @@ class NerPredicter:
         taggs = []
         for i in range(seq_len_list[0]):
             taggs.append(self.classids[label_list[0][i]])
-        print(taggs)
         output_labels = self.model.decode(list(input_text), taggs)
-        print(output_labels)
         data_items = []
         if output_labels is not None and len(output_labels) > 0:
             for key in output_labels.keys():

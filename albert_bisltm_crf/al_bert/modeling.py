@@ -26,7 +26,7 @@ import re
 import numpy as np
 import six
 import tensorflow as tf
-from zwt.NER.albert_ner.al_bert import bert_utils
+from albert_bisltm_crf.al_bert import bert_utils
 
 
 class BertConfig(object):
@@ -341,7 +341,6 @@ def get_activation(activation_string):
 
 def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
     """Compute the union of the current variables and checkpoint variables."""
-    assignment_map = {}
     initialized_variable_names = {}
 
     name_to_variable = collections.OrderedDict()

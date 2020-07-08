@@ -4,16 +4,15 @@ import tensorflow as tf
 from tensorflow.contrib.crf import crf_log_likelihood
 from tensorflow.contrib.crf import viterbi_decode
 from tensorflow.contrib.layers.python.layers import initializers
-from tensorflow.python.ops.rnn import bidirectional_dynamic_rnn as bi_rnn
-from tensorflow.contrib.rnn import GRUCell, LSTMCell, MultiRNNCell
-from al_bert import modeling
+from albert_bisltm_crf.al_bert import modeling
 from data_process import bio_to_json
+# import tensorflow_addons as tfa
 
 
 class Model(object):
     def __init__(self, init_checkpoint_file, bert_config_dir):
         self.lr = 0.001
-        self.lstm_dim = 384
+        self.hidden_size = 256
         self.num_tags = 15
         self.dropout_keep = 0.5
         self.optimizer = 'adam'
@@ -40,13 +39,10 @@ class Model(object):
         embedding = self.bert_embedding()
 
         # apply dropout before feed to lstm layer
-        lstm_inputs = tf.nn.dropout(embedding, self.dropout)
-
-        # bi-directional lstm layer
-        lstm_outputs = self.biLSTM_layer(lstm_inputs, self.lstm_dim, self.lengths)
+        inputs = tf.nn.dropout(embedding, self.dropout)
 
         # logits for tags
-        self.logits = self.project_layer(lstm_outputs)
+        self.logits = self.project_layer(inputs)
 
         # loss of the model
         self.loss = self.loss_layer(self.logits, self.lengths)
@@ -63,9 +59,8 @@ class Model(object):
         # 打印加载模型的参数
         train_vars = []
         for var in tvars:
-            init_string = ""
             if var.name in initialized_variable_names:
-                init_string = ", *INIT_FROM_CKPT*"
+                pass
             else:
                 train_vars.append(var)
         with tf.variable_scope("optimizer"):
@@ -98,40 +93,20 @@ class Model(object):
         embedding = model.get_sequence_output()
         return embedding
 
-    def biLSTM_layer(self, lstm_inputs, lstm_dim, lengths, name=None):
-        """
-        :param lstm_inputs: [batch_size, num_steps, emb_size]
-        :return: [batch_size, num_steps, 2*lstm_dim]
-        """
-        with tf.variable_scope("char_BiLSTM" if not name else name):
-            outputs, _ = bi_rnn(
-                tf.nn.rnn_cell.DropoutWrapper(GRUCell(lstm_dim), self.dropout_keep),
-                tf.nn.rnn_cell.DropoutWrapper(GRUCell(lstm_dim), self.dropout_keep),
-                inputs=lstm_inputs,
-                dtype=tf.float32,
-                sequence_length=lengths
-            )
-        return tf.concat(outputs, axis=2)
-
-    def project_layer(self, lstm_outputs, name=None):
-        """
-        hidden layer between lstm layer and logits
-        :param lstm_outputs: [batch_size, num_steps, emb_size]
-        :return: [batch_size, num_steps, num_tags]
-        """
+    def project_layer(self, outputs, name=None):
         with tf.variable_scope("project" if not name else name):
             with tf.variable_scope("hidden"):
-                W = tf.get_variable("W", shape=[self.lstm_dim * 2, self.lstm_dim],
+                W = tf.get_variable("W", shape=[786, self.hidden_size],
                                     dtype=tf.float32, initializer=self.initializer)
 
-                b = tf.get_variable("b", shape=[self.lstm_dim], dtype=tf.float32,
+                b = tf.get_variable("b", shape=[self.hidden_size], dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
-                output = tf.reshape(lstm_outputs, shape=[-1, self.lstm_dim * 2])
+                output = tf.reshape(outputs, shape=[-1, 786])
                 hidden = tf.tanh(tf.nn.xw_plus_b(output, W, b))
 
             # project to score of tags
             with tf.variable_scope("logits"):
-                W = tf.get_variable("W", shape=[self.lstm_dim, self.num_tags],
+                W = tf.get_variable("W", shape=[self.hidden_size, self.num_tags],
                                     dtype=tf.float32, initializer=self.initializer)
 
                 b = tf.get_variable("b", shape=[self.num_tags], dtype=tf.float32,
@@ -142,40 +117,14 @@ class Model(object):
             return tf.reshape(pred, [-1, self.num_steps, self.num_tags])
 
     def loss_layer(self, project_logits, lengths, name=None):
-        """
-        calculate crf loss
-        :param project_logits: [1, num_steps, num_tags]
-        :return: scalar loss
-        """
         with tf.variable_scope("crf_loss" if not name else name):
-            small = -1000.0
-            # pad logits for crf loss
-            start_logits = tf.concat(
-                [small * tf.ones(shape=[self.batch_size, 1, self.num_tags]), tf.zeros(shape=[self.batch_size, 1, 1])],
-                axis=-1)
-            pad_logits = tf.cast(small * tf.ones([self.batch_size, self.num_steps, 1]), tf.float32)
-            logits = tf.concat([project_logits, pad_logits], axis=-1)
-            logits = tf.concat([start_logits, logits], axis=1)
-            targets = tf.concat(
-                [tf.cast(self.num_tags * tf.ones([self.batch_size, 1]), tf.int32), self.targets], axis=-1)
-
-            self.trans = tf.get_variable(
-                "transitions",
-                shape=[self.num_tags + 1, self.num_tags + 1],
-                initializer=self.initializer)
             log_likelihood, self.trans = crf_log_likelihood(
-                inputs=logits,
-                tag_indices=targets,
-                transition_params=self.trans,
-                sequence_lengths=lengths + 1)
+                inputs=project_logits,
+                tag_indices=self.targets,
+                sequence_lengths=lengths)
             return tf.reduce_mean(-log_likelihood)
 
     def create_feed_dict(self, is_train, batch):
-        """
-        :param is_train: Flag, True for train batch
-        :param batch: list train/evaluate data
-        :return: structured data to feed
-        """
 
         _, segment_ids, chars, mask, tags = batch
         feed_dict = {
@@ -190,12 +139,6 @@ class Model(object):
         return feed_dict
 
     def run_step(self, sess, is_train, batch):
-        """
-        :param sess: session to run the batch
-        :param is_train: a flag indicate if it is a train batch
-        :param batch: a dict containing batch data
-        :return: batch result, loss of the batch or logits
-        """
         feed_dict = self.create_feed_dict(is_train, batch)
         if is_train:
             global_step, loss, _ = sess.run(

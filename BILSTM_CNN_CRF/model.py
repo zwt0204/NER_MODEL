@@ -7,6 +7,7 @@
 @Software: PyCharm
 """
 import tensorflow as tf
+from tensorflow.python.ops.rnn import bidirectional_dynamic_rnn as bi_rnn
 
 
 class NerCore:
@@ -89,11 +90,11 @@ class NerCore:
                                                          output_keep_prob=self.keep_prob)
             with tf.variable_scope("ner_layer", reuse=tf.AUTO_REUSE):
                 for i in range(self.num_layers):
-                    (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(lstm_cell_fw,
-                                                                                lstm_cell_bw,
-                                                                                self.embedded_layer,
-                                                                                sequence_length=self.sequence_lengths,
-                                                                                dtype=tf.float32)
+                    (output_fw, output_bw), _ = bi_rnn(lstm_cell_fw,
+                                                       lstm_cell_bw,
+                                                       inputs=self.embedded_layer,
+                                                       sequence_length=self.sequence_lengths,
+                                                       dtype=tf.float32)
                     outputs = tf.concat((output_fw, output_bw), 2)
                 self.outputs = tf.concat(outputs, axis=-1)
                 self.outputs = tf.nn.dropout(self.outputs, self.keep_prob)
