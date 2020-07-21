@@ -6,7 +6,8 @@ from tensorflow.contrib.crf import viterbi_decode
 from tensorflow.contrib.layers.python.layers import initializers
 from tensorflow.python.ops.rnn import bidirectional_dynamic_rnn as bi_rnn
 from tensorflow.contrib.rnn import GRUCell, LSTMCell, MultiRNNCell
-from al_bert import modeling
+# from al_bert import modeling   # 原始
+import modeling  # tiny
 from data_process import bio_to_json
 
 

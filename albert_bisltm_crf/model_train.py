@@ -9,23 +9,22 @@
 import codecs
 import tensorflow as tf
 import numpy as np
-import random
-import math
 import os
 import json
 from bert_lstm_model import Model
 from al_bert import tokenization
 import logging
 from data_process import BatchManager
-_logger = logging.getLogger()
 from data_process import convert_samples
+
+_logger = logging.getLogger()
 
 
 class modelTrain:
 
     def __init__(self):
         self.lstm_dim = 128
-        self.batch_size = 1
+        self.batch_size = 8
         self.max_seq_len = 70
         self.clip = 5.0
         self.dropout_keep = 0.5
@@ -38,11 +37,11 @@ class modelTrain:
         self.lower = True
         self.max_epoch = 10
         self.num_tags = len(convert_samples.tag_to_id)
-        self.model = Model(init_checkpoint_file='D:\models\\albert_base_zh\\albert_model.ckpt'
-                           , bert_config_dir='D:\models\\albert_base_zh\\albert_config_base.json')
+        self.model = Model(init_checkpoint_file='D:\迅雷下载\\albert_tiny_489k\\albert_model.ckpt'
+                           , bert_config_dir='D:\迅雷下载\\albert_tiny_489k\\albert_config_tiny.json')
         self.saver = tf.train.Saver()
 
-        self.tokenizer = tokenization.FullTokenizer(vocab_file='D:\models\\albert_base_zh\\vocab.txt',
+        self.tokenizer = tokenization.FullTokenizer(vocab_file='D:\迅雷下载\\albert_tiny_489k\\vocab.txt',
                                                     do_lower_case=True)
 
     def train(self):

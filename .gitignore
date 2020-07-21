@@ -113,3 +113,5 @@ script/*/*.csv
 launch.json
 settings.json
 .vscode/
+albert_base_zh
+albert_tiny_489k

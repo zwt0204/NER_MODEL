@@ -4,23 +4,31 @@ from al_bert import tokenization
 from data_process import BatchManager
 from data_process import bio_to_json
 from data_process import convert_samples
+import os
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
 
 
 class bert_predict:
     def __init__(self, **kwargs):
         self.tokenizer = tokenization.FullTokenizer(
             vocab_file=kwargs['vocab_file'],
+            # vocab_file='D:\\mygit\\NER_MODEL\\albert_tiny_489k\\vocab.txt',
             do_lower_case=True)
         self.max_seq_len = 70
         self.ckpt_path = kwargs['model_dir']
+        # self.ckpt_path = 'D:\\mygit\\NER_MODEL\\models'
         self.init_checkpoint = kwargs['init_checkpoint_file']
+        # self.init_checkpoint = 'D:\\mygit\\NER_MODEL\\albert_tiny_489k\\albert_model.ckpt'
         self.bert_config = kwargs['bert_config_dir']
+        # self.bert_config = 'D:\\mygit\\NER_MODEL\\albert_tiny_489k\\albert_config_tiny.json'
 
         self.graph = kwargs["graph"]
         with self.graph.as_default():
             self.model = Model(init_checkpoint_file=self.init_checkpoint, bert_config_dir=self.bert_config)
             self.saver = tf.train.Saver()
-        config = tf.ConfigProto(log_device_placement=False)
+        config = tf.ConfigProto(log_device_placement=False, gpu_options=gpu_options)
         self.session = tf.Session(graph=self.graph, config=config)
         self.load()
 
@@ -73,14 +81,26 @@ class bert_predict:
         return sentences
 
 
+class_bert_lstm_graph = tf.Graph()
+test = bert_predict(vocab_file='D:\\mygit\\NER_MODEL\\albert_tiny_489k\\vocab.txt'
+                    , model_dir='D:\\mygit\\NER_MODEL\\models', graph=class_bert_lstm_graph,
+                    init_checkpoint_file='D:\\mygit\\NER_MODEL\\albert_tiny_489k\\albert_model.ckpt'
+                    , bert_config_dir='D:\\mygit\\NER_MODEL\\albert_tiny_489k\\albert_config_tiny.json')
+
 if __name__ == '__main__':
+    from datetime import datetime
+
     class_bert_lstm_graph = tf.Graph()
     test = bert_predict(vocab_file='D:\models\\albert_base_zh\\vocab.txt', map_file='maps.pkl'
                         , model_dir='..\\models', graph=class_bert_lstm_graph,
-                        init_checkpoint_file='D:\models\\albert_base_zh\\albert_model.ckpt'
-                        , bert_config_dir='D:\models\\albert_base_zh\\albert_config_base.json')
-    data = ['晚上好，我同妈妈去看看卖手套的门店', '晚上好，我同妈妈去看看卖手套的门店']
+                        init_checkpoint_file='D:\迅雷下载\\albert_tiny_489k\\albert_model.ckpt'
+                        , bert_config_dir='D:\迅雷下载\\albert_tiny_489k\\albert_config_tiny.json')
+    data = ['晚上好，我同妈妈去看看卖手套的门店']
+    date = datetime.now()
     a = test.predict_batch(data)
     # b = test.predict('晚上好，我同妈妈去看看卖手套的门店')
-    print('=',a)
+    date1 = datetime.now()
+    print('=', a)
     # print(b)
+    print(date1 - date)
+    # 测试时间大概30ms左右
