@@ -34,7 +34,7 @@ class ModelTrain:
         self.steps_check = 10
         self.zeros = False
         self.lower = True
-        self.max_epoch = 10
+        self.max_epoch = 2
         self.num_tags = len(convert_samples.tag_to_id)
         self.model = Model(init_checkpoint_file='D:\models\\albert_base_zh\\albert_model.ckpt'
                            , bert_config_dir='D:\models\\albert_base_zh\\albert_config_base.json')

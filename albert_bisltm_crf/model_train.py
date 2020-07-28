@@ -35,7 +35,7 @@ class modelTrain:
         self.steps_check = 10
         self.zeros = False
         self.lower = True
-        self.max_epoch = 10
+        self.max_epoch = 2
         self.num_tags = len(convert_samples.tag_to_id)
         self.model = Model(init_checkpoint_file='D:\迅雷下载\\albert_tiny_489k\\albert_model.ckpt'
                            , bert_config_dir='D:\迅雷下载\\albert_tiny_489k\\albert_config_tiny.json')

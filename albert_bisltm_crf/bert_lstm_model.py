@@ -221,7 +221,9 @@ class Model(object):
         for score, length in zip(logits, lengths):
             score = score[:length]
             pad = small * np.ones([length, 1])
+            # 在padding的地方加入-1000
             logits = np.concatenate([score, pad], axis=1)
+            #
             logits = np.concatenate([start, logits], axis=0)
             path, _ = viterbi_decode(logits, matrix)
             paths.append(path[1:])
